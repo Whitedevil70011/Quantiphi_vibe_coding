@@ -1,8 +1,16 @@
-const BASE = 'http://localhost:5000/api';
+const BASE = '/api';
 
 // Tasks
 export const fetchTasks = (priority = '') =>
-  fetch(`${BASE}/tasks${priority ? `?priority=${priority}` : ''}`).then(r => r.json());
+  fetch(`${BASE}/tasks${priority ? `?priority=${priority}` : ''}`)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+      return r.json();
+    })
+    .catch(err => {
+      console.error('fetchTasks error:', err);
+      return [];
+    });
 
 export const createTask = (data) =>
   fetch(`${BASE}/tasks`, {
@@ -23,7 +31,15 @@ export const deleteTask = (id) =>
 
 // Users
 export const fetchUsers = () =>
-  fetch(`${BASE}/users`).then(r => r.json());
+  fetch(`${BASE}/users`)
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+      return r.json();
+    })
+    .catch(err => {
+      console.error('fetchUsers error:', err);
+      return [];
+    });
 
 export const createUser = (data) =>
   fetch(`${BASE}/users`, {
