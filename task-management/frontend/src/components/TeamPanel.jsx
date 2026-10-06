@@ -6,7 +6,7 @@ export default function TeamPanel({ users, tasks, onAddUser, onDeleteUser }) {
   const inProgressCount = {};
   tasks.forEach(t => {
     if (t.status === 'inprogress' && t.assignedUser) {
-      const uid = t.assignedUser._id || t.assignedUser;
+      const uid = String(t.assignedUser._id || t.assignedUser);
       inProgressCount[uid] = (inProgressCount[uid] || 0) + 1;
     }
   });
@@ -17,7 +17,7 @@ export default function TeamPanel({ users, tasks, onAddUser, onDeleteUser }) {
 
       <div className="team-list">
         {users.map(user => {
-          const count = inProgressCount[user._id] || 0;
+          const count = inProgressCount[String(user._id)] || 0;
           const overloaded = count > 5;
           return (
             <div key={user._id} className="team-member">

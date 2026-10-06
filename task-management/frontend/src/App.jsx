@@ -32,7 +32,7 @@ export default function App() {
   const handleSaveTask = async (data) => {
     if (editingTask) {
       const updated = await updateTask(editingTask._id, data);
-      setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
+      setTasks(prev => prev.map(t => String(t._id) === String(updated._id) ? updated : t));
     } else {
       const created = await createTask(data);
       setTasks(prev => [...prev, created]);
@@ -43,7 +43,7 @@ export default function App() {
 
   const handleDeleteTask = async (id) => {
     await deleteTask(id);
-    setTasks(prev => prev.filter(t => t._id !== id));
+    setTasks(prev => prev.filter(t => String(t._id) !== String(id)));
   };
 
   const handleEdit = (task) => {
@@ -53,10 +53,10 @@ export default function App() {
 
   // Drop → update task status
   const handleDrop = async (taskId, newStatus) => {
-    const task = tasks.find(t => t._id === taskId);
+    const task = tasks.find(t => String(t._id) === String(taskId));
     if (!task || task.status === newStatus) return;
     const updated = await updateTask(taskId, { status: newStatus });
-    setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
+    setTasks(prev => prev.map(t => String(t._id) === String(updated._id) ? updated : t));
   };
 
   // ── User handlers ──────────────────────────────────────
