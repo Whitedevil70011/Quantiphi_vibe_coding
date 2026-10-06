@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const { pool } = require('../db');
 
 // GET all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find();
-    res.json(users);
+    const result = await pool.query('SELECT id AS "_id", name, avatar, color FROM users ORDER BY created_at ASC');
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -15,9 +15,14 @@ router.get('/', async (req, res) => {
 // POST create user
 router.post('/', async (req, res) => {
   try {
-    const user = new User(req.body);
-    await user.save();
-    res.status(201).json(user);
+    const { name, avatar, color } = req.body;
+    const result = await pool.query(
+      `INSERT INTO users (name, avatar, color)
+       VALUES ($1, $2, $3)
+       RETURNING id AS "_id", name, avatar, color`,
+      [name, avatar || '', color || '#6c63ff']
+    );
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -26,7 +31,7 @@ router.post('/', async (req, res) => {
 // DELETE user
 router.delete('/:id', async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
+    await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
     res.json({ message: 'User deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

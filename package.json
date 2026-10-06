@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/Whitedevil70011/Quantiphi_vibe_coding/issues"
   },
-  "homepage": "https://github.com/Whitedevil70011/Quantiphi_vibe_coding#readme"
+  "homepage": "https://github.com/Whitedevil70011/Quantiphi_vibe_coding#readme",
+  "dependencies": {
+    "@neon/config": "^1.8.4",
+    "@neon/env": "^1.5.1"
+  }
 }
