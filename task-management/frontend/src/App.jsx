@@ -1,122 +1,131 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import Column from './components/Column';
+import TaskModal from './components/TaskModal';
+import TeamPanel from './components/TeamPanel';
+import FilterBar from './components/FilterBar';
+import { fetchTasks, createTask, updateTask, deleteTask, fetchUsers, createUser, deleteUser } from './api';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+const COLUMNS = ['todo', 'inprogress', 'done'];
+
+export default function App() {
+  const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [priority, setPriority] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load data
+  useEffect(() => {
+    Promise.all([fetchTasks(), fetchUsers()])
+      .then(([t, u]) => { setTasks(t); setUsers(u); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Reload tasks when priority filter changes
+  useEffect(() => {
+    fetchTasks(priority).then(setTasks);
+  }, [priority]);
+
+  // ── Task handlers ──────────────────────────────────────
+  const handleSaveTask = async (data) => {
+    if (editingTask) {
+      const updated = await updateTask(editingTask._id, data);
+      setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
+    } else {
+      const created = await createTask(data);
+      setTasks(prev => [...prev, created]);
+    }
+    setModalOpen(false);
+    setEditingTask(null);
+  };
+
+  const handleDeleteTask = async (id) => {
+    await deleteTask(id);
+    setTasks(prev => prev.filter(t => t._id !== id));
+  };
+
+  const handleEdit = (task) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  };
+
+  // Drop → update task status
+  const handleDrop = async (taskId, newStatus) => {
+    const task = tasks.find(t => t._id === taskId);
+    if (!task || task.status === newStatus) return;
+    const updated = await updateTask(taskId, { status: newStatus });
+    setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
+  };
+
+  // ── User handlers ──────────────────────────────────────
+  const handleAddUser = async (data) => {
+    const user = await createUser(data);
+    setUsers(prev => [...prev, user]);
+  };
+
+  const handleDeleteUser = async (id) => {
+    await deleteUser(id);
+    setUsers(prev => prev.filter(u => u._id !== id));
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app">
+      {/* ── Header ── */}
+      <header className="app-header">
+        <div className="header-left">
+          <span className="header-logo">📋</span>
+          <h1 className="header-title">Kanban Board</h1>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
+        <button className="btn-new-task" onClick={() => { setEditingTask(null); setModalOpen(true); }}>
+          + New Task
         </button>
-      </section>
+      </header>
 
-      <div className="ticks"></div>
+      {/* ── Filter bar ── */}
+      <div className="app-filters">
+        <FilterBar priority={priority} onChange={setPriority} />
+      </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {/* ── Main layout ── */}
+      <div className="app-body">
+        {/* Board */}
+        <div className="board">
+          {loading ? (
+            <p className="loading-text">Loading tasks...</p>
+          ) : (
+            COLUMNS.map(status => (
+              <Column
+                key={status}
+                status={status}
+                tasks={tasks.filter(t => t.status === status)}
+                onEdit={handleEdit}
+                onDelete={handleDeleteTask}
+                onDrop={handleDrop}
+              />
+            ))
+          )}
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* Team Panel */}
+        <TeamPanel
+          users={users}
+          tasks={tasks}
+          onAddUser={handleAddUser}
+          onDeleteUser={handleDeleteUser}
+        />
+      </div>
+
+      {/* ── Modal ── */}
+      {modalOpen && (
+        <TaskModal
+          task={editingTask}
+          users={users}
+          onSave={handleSaveTask}
+          onClose={() => { setModalOpen(false); setEditingTask(null); }}
+        />
+      )}
+    </div>
+  );
 }
-
-export default App
